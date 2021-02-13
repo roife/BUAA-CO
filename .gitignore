@@ -1,0 +1,27 @@
+out/
+test-rand-logs/
+venv/
+*.vcd
+*.zip
+code.asm
+code.txt
+code_handler.asm
+code_handler.txt
+test.asm
+
+# Xilinx ISE
+_xmsgs/
+iseconfig/
+isim/
+*_isim_beh.exe
+*_isim_beh.wdb
+*_summary.html
+*.gise
+*.prj
+*.xise
+*.xmsgs
+fuse.log
+fuseRelaunch.cmd
+isim.cmd
+isim.log
+xilinxsim.ini
