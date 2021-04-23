@@ -1,56 +1,56 @@
 # BUAA CO
 
-## P0：部件及状态机设计（Logisim）
+## P0：Logisim
 
 课下测试：搭建 CRC 校验码计算电路，ALU，正则表达式匹配
 
 课上测试：Logisim 完成部件及 FSM 设计
 
-## P1：部件及状态机设计（Verilog-HDL）
+## P1：Verilog-HDL
 
 课下测试：实现 splitter, ALU，格雷码计数器，合法表达式识别，走迷宫
 
 课上测试：Verilog-HDL 完成部件及 FSM 设计
 
-## P2：汇编语言
+## P2：MIPS
 
 课下测试：矩阵乘法、排序、回文串判断
 
 课上测试：选择题+编程题
 
-## P3：Logisim 开发单周期 CPU
+## P3：Logisim 单周期 CPU
 
 课下测试：完成支持 7 条指令的单周期 CPU 设计
 
 课上测试：新增指令
 
-## P4：Verilog 开发单周期 CPU
+## P4：Verilog 单周期 CPU
 
 课下测试：完成支持 7 条指令的单周期 CPU 设计
 
 课上测试：新增指令
 
-## P5：Verilog 开发流水线 CPU（1）
+## P5：Verilog 流水线 CPU（1）
 
 课下测试：完成支持 10 指令流水线 CPU 设计
 
 课上测试：流水线工程化方法
 
-## P6：Verilog 开发流水线 CPU（2）
+## P6：Verilog 流水线 CPU（2）
 
 课下测试：完成支持 50 指令流水线 CPU 设计
 
 课上测试：流水线工程化方法
 
-## P7：Verilog 开发 MIPS 微系统（1）
+## P7：异常中断支持
 
 课下测试：完成微型 MIPS 系统设计，开发简单 I/O，验证中断
 
 课上测试：现场测试
 
-## P8：Verilog 开发 MIPS 微系统（2）
+## P8：FPGA
 
-2020 级取消 P8
+2020 级取消 P8（悲）
 
 # 后记
 
