@@ -66,8 +66,8 @@ module DM (
         end
         else if (DMWr) begin
             if (DMType == `DM_w) `word <= WD;
-            else if (DMType == `DM_h) `half <= WD[15 + 16 * addr[1:1] -:16];
-            else if (DMType == `DM_b) `byte <= WD[7 + 8 * addr[1:0] -:8];
+            else if (DMType == `DM_h) `half <= WD[15:0];
+            else if (DMType == `DM_b) `byte <= WD[7:0];
 
             $display("@%h: *%h <= %h", pc, addr, WD);
         end
