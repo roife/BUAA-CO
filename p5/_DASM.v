@@ -1,4 +1,3 @@
-`timescale 1ns / 1ps
 `define lb 	    6'b100000
 `define lbu     6'b100100
 `define lh	    6'b100001
@@ -226,11 +225,11 @@ module _DASM (
 	// wire [10*8-1:0] saddr = {sp, get_, "_"}
 	// wire _rdrsrt = {}
 
-	wire [16*8-1:0] _rd_rs_rt = {srd, srs, srt};
-	wire [16*8-1:0] _rd_rt_rs = {srd, srt, srs};
-	wire [16*8-1:0] _rd_rt_sha = {srd, srt, ssha};
-	wire [16*8-1:0] _rt_rs_imm = {srt, srs, imm_as_dec ? simm_dec : simm};
-	wire [16*8-1:0] _rt_rs_imm_signed = {srt, srs, imm_as_dec ? simm_dec_signed : simm};
+	wire [12*8-1:0] _rd_rs_rt = {srd, srs, srt};
+	wire [12*8-1:0] _rd_rt_rs = {srd, srt, srs};
+	wire [12*8-1:0] _rd_rt_sha = {srd, srt, ssha};
+	wire [15*8-1:0] _rt_rs_imm = {srt, srs, imm_as_dec ? simm_dec : simm};
+	wire [15*8-1:0] _rt_rs_imm_signed = {srt, srs, imm_as_dec ? simm_dec_signed : simm};
 	wire [31:0] branch_npc = pc + 4 + {{14{imm[15]}}, imm, 2'b0};
 	wire [24*8-1:0] _rs_rt_imm = {srs, srt, imm_as_dec ? simm_dec : simm, "[",
 														get_hex(branch_npc[31:28]), get_hex(branch_npc[27:24]),
@@ -242,18 +241,26 @@ module _DASM (
 											    get_hex(branch_npc[23:20]), get_hex(branch_npc[19:16]),
 											    get_hex(branch_npc[15:12]), get_hex(branch_npc[11:8]),
 											    get_hex(branch_npc[7:4]), get_hex(branch_npc[3:0]), "]"}; // branch
-	wire [16*8-1:0] _rt_imm = {srt, imm_as_dec ? simm_dec : simm};
-	wire [16*8-1:0] _rs_rt = {srs, srt};
-	wire [16*8-1:0] _target = {" 0", get_hex(target[25:22]), get_hex(target[21:18]),
+	wire [10*8-1:0] _rt_imm = {srt, imm_as_dec ? simm_dec : simm};
+	wire [8*8-1:0] _rs_rt = {srs, srt};
+	wire [9*8-1:0] _target = {" 0", get_hex(target[25:22]), get_hex(target[21:18]),
 									get_hex(target[17:14]), get_hex(target[13:10]),
 									get_hex(target[9:6]),   get_hex(target[5:2]), get_hex({target[1:0], 2'b0})};
-	wire [16*8-1:0] _rd_rs = {srd, srs};
-	wire [16*8-1:0] _rs = {srs};
-	wire [16*8-1:0] _rd = {srd};
-	wire [16*8-1:0] _rt_off_base = {srt, " ", soff, "(", srs[3*8-1:0], ")"};
-	wire [16*8-1:0] _rt_rd = {srd};
+	wire [8*8-1:0] _rd_rs = {srd, srs};
+	wire [4*8-1:0] _rs = {srs};
+	wire [4*8-1:0] _rd = {srd};
+	wire [14*8-1:0] _rt_off_base = {srt, " ", soff, "(", srs[3*8-1:0], ")"};
+	wire [4*8-1:0] _rt_rd = {srd};
 
-	assign asm =
+    function [32*8-1:0] asm_ll;
+        input [32*8-1:0] str;
+    begin
+        asm_ll = str;
+        while (!asm_ll[32*8-1 -:8]) asm_ll = asm_ll << 8;
+    end
+    endfunction
+
+	assign asm = asm_ll(
 				beq ? {"beq", _rs_rt_imm} :
 				bgez ? {"bgez", _rs_imm} :
 				bgtz ? {"bgtz", _rs_imm} :
@@ -304,6 +311,6 @@ module _DASM (
 				subu ? {"subu", _rd_rs_rt} :
 				Xor ? {"Xor", _rd_rs_rt} :
 				xori ? {"xori", _rt_rs_imm} :
-				"No Instr";
+				"No Instr");
 
 endmodule

@@ -14,20 +14,25 @@ module _CU (
     output store,
     output calc_r,
     output calc_i,
+    output lui,
     output shiftS,
     output shiftV,
     output branch,
     output j_r,
     output j_addr,
     output j_l,
+    output md,
+    output mt,
+    output mf,
     // signals
     output [2:0] Br,
     output [2:0] B_type,
-    output EXTOp,
+    output [2:0] EXTOp,
 
     output [3:0] ALUControl,
     output [1:0] ALUASrc,
     output [2:0] ALUBSrc,
+    output [3:0] HILO_type,
 
     output [2:0] DMType,
     output DMWr,
@@ -64,11 +69,11 @@ module _CU (
     wire bne   = (opcode == `OP_bne  );
     wire j     = (opcode == `OP_j    );
     wire jal   = (opcode == `OP_jal  );
-    wire lui   = (opcode == `OP_lui  );
     wire ori   = (opcode == `OP_ori  );
     wire slti  = (opcode == `OP_slti );
     wire sltiu = (opcode == `OP_sltiu);
     wire xori  = (opcode == `OP_xori );
+    assign lui   = (opcode == `OP_lui  );
 
     wire add   = (opcode == `OP_rtype && func == `FUNC_add  );
     wire addu  = (opcode == `OP_rtype && func == `FUNC_addu );
@@ -103,9 +108,13 @@ module _CU (
 
     assign calc_r = add | addu | sub | subu | slt | sltu |
                     sll | sllv | srl | srlv | sra | srav |
-                    And | Or | Xor | Nor; // exclude jr & jalr
+                    And | Or | Xor | Nor; // exclude jr & jalr & mt/mf/md
     assign calc_i = addi | addiu | andi | ori | xori |
-                    slti | sltiu | lui;
+                    slti | sltiu; // exclude lui
+
+    assign md = mult | multu | div | divu;
+    assign mt = mtlo | mthi;
+    assign mf = mflo | mfhi;
 
     assign shiftS  = sll | srl | sra;
     assign shiftV = sllv | srlv | srav;
@@ -116,7 +125,9 @@ module _CU (
 
 
     ////////////StageD
-    assign EXTOp = (addi | addiu | slti | sltiu | load | store); // signed
+    assign EXTOp = (addi | addiu | slti | sltiu | load | store) ? `EXT_signed :
+                    lui ? `EXT_lui :
+                    `EXT_unsigned;
     // wire unsigned_ext = andi | ori | xori;
     assign Br = branch ? `BR_branch :
                 j_addr ? `BR_addr :
@@ -141,14 +152,22 @@ module _CU (
                         (sra | srav) ? `ALU_sra :
                         (slt | slti) ? `ALU_slt :
                         (sltu | sltiu) ? `ALU_sltu :
-                        (lui) ? `ALU_lui :
                         `ALU_add;
     assign ALUASrc = (shiftS | shiftV) ? `ALUASrcRT : `ALUASrcRS;
     assign ALUBSrc = shiftS ? `ALUBSrcShamt :
                      shiftV ? `ALUBSrcRS_4_0 :
                      (calc_r && !shiftS && !shiftV) ? `ALUBSrcRT :
-                     (calc_i | load | store) ? `ALUBSrcExt :
+                     (calc_i | lui | load | store) ? `ALUBSrcExt :
                      `ALUBSrcRT;
+    assign HILO_type =  mult ? `HILO_mult :
+                        multu ? `HILO_multu :
+                        div ? `HILO_div :
+                        divu ? `HILO_divu :
+                        mflo ? `HILO_mflo :
+                        mfhi ? `HILO_mfhi :
+                        mtlo ? `HILO_mtlo :
+                        mthi ? `HILO_mthi :
+                        `HILO_none;
 
     ////////////StageM
     assign DMType = (lw || sw) ? `DM_w :
@@ -160,12 +179,14 @@ module _CU (
     assign DMWr = store;
 
     ////////////StageW
-    assign RFDst   = (calc_r | jalr) ? rd_addr :
-                     (calc_i | load) ? rt_addr :
+    assign RFDst   = (calc_r | jalr | mf) ? rd_addr :
+                     (calc_i | lui | load) ? rt_addr :
                      (jal) ? 5'd31 :
                      5'd0;
-    assign RFWr = calc_r | calc_i | load | j_l;
+    assign RFWr = !(!RFDst);
     assign RFWDSrc = load ? `RFWD_DMout :
                      (jal | jalr) ? `RFWD_PC8 :
+                     lui ? `RFWD_EXTout :
+                     mf ? `RFWD_HILOout :
                      `RFWD_ALUout;
 endmodule

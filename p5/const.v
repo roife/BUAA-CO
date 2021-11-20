@@ -55,58 +55,6 @@
 `define RT_bltz    5'b00000
 `define RT_bgez    5'b00001
 
-`define I_lb      1
-`define I_lbu     2
-`define I_lh      3
-`define I_lhu     4
-`define I_lw      5
-`define I_sb      6
-`define I_sh      7
-`define I_sw      8
-`define I_addi    9
-`define I_addiu   10
-`define I_andi    11
-`define I_beq     12
-`define I_bgez    13
-`define I_bgtz    14
-`define I_blez    15
-`define I_bltz    16
-`define I_bne     17
-`define I_j       18
-`define I_jal     19
-`define I_lui     20
-`define I_ori     21
-`define I_slti    22
-`define I_sltiu   23
-`define I_xori    24
-`define I_add     25
-`define I_addu    26
-`define I_and     27
-`define I_div     28
-`define I_divu    29
-`define I_jalr    30
-`define I_jr      31
-`define I_mfhi    32
-`define I_mflo    33
-`define I_mthi    34
-`define I_mtlo    35
-`define I_mult    36
-`define I_multu   37
-`define I_nor     38
-`define I_or      39
-`define I_sll     40
-`define I_sllv    41
-`define I_slt     42
-`define I_sltu    43
-`define I_sra     44
-`define I_srav    45
-`define I_srl     46
-`define I_srlv    47
-`define I_sub     48
-`define I_subu    49
-`define I_xor     50
-
-
 //// CU Signal
 
 // ALU
@@ -148,6 +96,8 @@
 `define RFWD_ALUout  3'b000
 `define RFWD_DMout   3'b001
 `define RFWD_PC8     3'b010
+`define RFWD_HILOout 3'b011
+`define RFWD_EXTout  3'b100
 
 // ALUASrc
 `define ALUASrcRT       2'b00
@@ -157,5 +107,20 @@
 `define ALUBSrcShamt    3'd0
 `define ALUBSrcRS_4_0   3'd1
 `define ALUBSrcRT       3'd2
-`define ALUBSrcExt         3'd3
+`define ALUBSrcExt      3'd3
 
+// HILOType
+`define HILO_none   4'd0
+`define HILO_mult   4'd1
+`define HILO_multu  4'd2
+`define HILO_div    4'd3
+`define HILO_divu   4'd4
+`define HILO_mflo   4'd5
+`define HILO_mfhi   4'd6
+`define HILO_mtlo   4'd7
+`define HILO_mthi   4'd8
+
+// EXT
+`define EXT_unsigned 3'd0
+`define EXT_signed 3'd1
+`define EXT_lui 3'd2

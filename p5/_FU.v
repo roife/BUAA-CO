@@ -17,25 +17,27 @@ module _FU (
         .j_l(E_j_l)
     );
 
-    wire M_j_l, M_calc_r, M_calc_i;
+    wire M_j_l, M_calc_r, M_calc_i, M_mf;
     _CU _MInterp (
         .instr(M_instr),
         .calc_r(M_calc_r),
         .calc_i(M_calc_i),
-        .j_l(M_j_l)
+        .j_l(M_j_l),
+        .mf(M_mf)
     );
 
-    wire W_j_l, W_calc_r, W_calc_i, W_load;
+    wire W_j_l, W_calc_r, W_calc_i, W_load, W_mf;
     _CU _WInterp (
         .instr(W_instr),
         .calc_r(W_calc_r),
         .calc_i(W_calc_i),
         .j_l(W_j_l),
-        .load(W_load)
+        .load(W_load),
+        .mf(W_mf)
     );
 
     assign forwardE = E_j_l;
-    assign forwardM = M_j_l | M_calc_r | M_calc_i;
-    assign forwardW = W_j_l | W_calc_r | W_calc_i | W_load;
+    assign forwardM = M_j_l | M_calc_r | M_calc_i | M_mf;
+    assign forwardW = W_j_l | W_calc_r | W_calc_i | W_load | W_mf;
 
 endmodule

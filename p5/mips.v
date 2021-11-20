@@ -10,42 +10,40 @@ module mips (
     wire D_reg_reset = 1'b0, E_reg_reset = stall, M_reg_reset = 1'b0, W_reg_reset = 1'b0;
 
     wire [31:0] F_instr, D_instr, E_instr, M_instr, W_instr;
+    wire E_HILObusy;
     _SU _su(
         .D_instr(D_instr),
         .E_instr(E_instr),
         .M_instr(M_instr),
+        .E_HILObusy(E_HILObusy),
         .stall(stall)
     );
 
-    wire forwardE, forwardM, forwardW;
     wire [31:0] E_RFWD, M_RFWD, W_RFWD;
     wire [4:0] E_RFDst, M_RFDst, W_RFDst;
     wire [2:0] E_RFWDSrc, M_RFWDSrc, W_RFWDSrc;
-    wire E_RFWE, M_RFWE, W_RFWE;
+    wire W_RFWE;
 
-    assign E_RFWD = (E_RFWDSrc == `RFWD_ALUout) ? E_ALUout :
+    assign E_RFWD = // (E_RFWDSrc == `RFWD_ALUout) ? E_ALUout :
                     // (E_RFWDSrc == `RFWD_DMout) ? E_DMout :
+                    // (E_RFWDSrc == `RFWD_HILOout) ? E_HILOout :
+                    (E_RFWDSrc == `RFWD_EXTout) ? E_EXTout :
                     (E_RFWDSrc == `RFWD_PC8) ? E_pc + 8 :
-                    0;
+                    0; // don't forward
 
     assign M_RFWD = (M_RFWDSrc == `RFWD_ALUout) ? M_ALUout :
-                    (M_RFWDSrc == `RFWD_DMout) ? M_DMout :
+                    (M_RFWDSrc == `RFWD_HILOout) ? M_HILOout :
+                    (M_RFWDSrc == `RFWD_EXTout) ? M_EXTout :
+                    // (M_RFWDSrc == `RFWD_DMout) ? M_DMout :
                     (M_RFWDSrc == `RFWD_PC8) ? M_pc + 8 :
                     0;
 
     assign W_RFWD = (W_RFWDSrc == `RFWD_ALUout) ? W_ALUout :
+                    (W_RFWDSrc == `RFWD_HILOout) ? W_HILOout :
+                    (W_RFWDSrc == `RFWD_EXTout) ? W_EXTout :
                     (W_RFWDSrc == `RFWD_DMout) ? W_DMout :
                     (W_RFWDSrc == `RFWD_PC8) ? W_pc + 8 :
                     0;
-    _FU _fu (
-            .D_instr(D_instr),
-            .E_instr(E_instr),
-            .M_instr(M_instr),
-            .W_instr(W_instr),
-            .forwardE(forwardE),
-            .forwardM(forwardM),
-            .forwardW(forwardW)
-    );
 
     /// StageF
     wire [31:0] F_pc, npc;
@@ -64,8 +62,10 @@ module mips (
         .clk(clk),
         .reset(reset || D_reg_reset),
         .WE(D_reg_en),
+
         .instr_in(F_instr),
         .pc_in(F_pc),
+
         .instr_out(D_instr),
         .pc_out(D_pc)
     );
@@ -73,7 +73,8 @@ module mips (
     wire [4:0] D_rs_addr, D_rt_addr;
     wire [15:0] D_imm;
     wire [25:0] D_addr;
-    wire D_EXTOp, D_b_jump;
+    wire D_b_jump;
+    wire [2:0] D_EXTOp;
     wire [2:0] D_Br, D_B_type;
     wire [31:0] D_rs, D_rt, D_EXTout, D_type;
 
@@ -110,14 +111,14 @@ module mips (
     );
     // FORWARD
     wire [31:0] FWD_D_RS =  (D_rs_addr == 0) ? 0 :
-                            (D_rs_addr == E_RFDst && forwardE && E_RFWE) ? E_RFWD :
-                            (D_rs_addr == M_RFDst && forwardM && M_RFWE) ? M_RFWD :
+                            (D_rs_addr == E_RFDst) ? E_RFWD :
+                            (D_rs_addr == M_RFDst) ? M_RFWD :
                             D_rs;
                             // W has been forwarded inside
 
     wire [31:0] FWD_D_RT =  (D_rt_addr == 0) ? 0 :
-                            (D_rt_addr == E_RFDst && forwardE && E_RFWE) ? E_RFWD :
-                            (D_rt_addr == M_RFDst && forwardM && M_RFWE) ? M_RFWD :
+                            (D_rt_addr == E_RFDst) ? E_RFWD :
+                            (D_rt_addr == M_RFDst) ? M_RFWD :
                             D_rt;
                             // W has been forwarded inside
 
@@ -144,20 +145,22 @@ module mips (
         .clk(clk),
         .reset(reset || E_reg_reset),
         .WE(E_reg_en),
+
         .instr_in(D_instr),
         .pc_in(D_pc),
         .EXT_in(D_EXTout),
         .rs_in(FWD_D_RS),
         .rt_in(FWD_D_RT),
         .instr_out(E_instr),
+
         .pc_out(E_pc),
         .EXT_out(E_EXTout),
         .rs_out(E_rs),
         .rt_out(E_rt)
     );
 
-    wire [31:0] ALUout;
-    wire [3:0] E_ALUControl;
+
+    wire [3:0] E_ALUControl, E_HILOType;
     wire [1:0] E_ALUASrc;
     wire [2:0] E_ALUBSrc;
     wire [4:0] E_rs_addr, E_rt_addr;
@@ -170,21 +173,21 @@ module mips (
         .ALUASrc(E_ALUASrc),
         .ALUBSrc(E_ALUBSrc),
         .RFDst(E_RFDst),
-        .RFWr(E_RFWE),
-        .RFWDSrc(E_RFWDSrc)
+        .RFWDSrc(E_RFWDSrc),
+        .HILO_type(E_HILOType)
     );
 
     wire [31:0] E_ALUA, E_ALUB, E_ALUout;
 
     // FORWARD
     wire [31:0] FWD_E_RS =  (E_rs_addr == 0) ? 0 :
-                            (E_rs_addr == M_RFDst && forwardM && M_RFWE) ? M_RFWD :
-                            (E_rs_addr == W_RFDst && forwardW && W_RFWE) ? W_RFWD :
+                            (E_rs_addr == M_RFDst) ? M_RFWD :
+                            (E_rs_addr == W_RFDst) ? W_RFWD :
                             E_rs;
 
     wire [31:0] FWD_E_RT =  (E_rt_addr == 0) ? 0 :
-                            (E_rt_addr == M_RFDst && forwardM && M_RFWE) ? M_RFWD :
-                            (E_rt_addr == W_RFDst && forwardW && W_RFWE) ? W_RFWD :
+                            (E_rt_addr == M_RFDst) ? M_RFWD :
+                            (E_rt_addr == W_RFDst) ? W_RFWD :
                             E_rt;
 
     assign E_ALUA = (E_ALUASrc == `ALUASrcRT) ? FWD_E_RT :
@@ -204,20 +207,38 @@ module mips (
         .ALUout(E_ALUout)
     );
 
+    wire [31:0] E_HILOout;
+
+    E_HILO E_hilo (
+        .clk(clk),
+        .reset(reset),
+        .rs(FWD_E_RS),
+        .rt(FWD_E_RT),
+        .HILOtype(E_HILOType),
+        .HILObusy(E_HILObusy),
+        .HILOout(E_HILOout)
+    );
+
     /// StageM
-    wire [31:0] M_pc, M_ALUout, M_rt;
+    wire [31:0] M_pc, M_ALUout, M_rt, M_HILOout, M_EXTout;
     M_REG M_reg(
         .clk(clk),
         .reset(reset || M_reg_reset),
         .WE(M_reg_en),
+
         .instr_in(E_instr),
         .pc_in(E_pc),
         .ALU_in(E_ALUout),
+        .HILO_in(E_HILOout),
         .rt_in(FWD_E_RT),
+        .EXT_in(E_EXTout),
+
         .instr_out(M_instr),
         .pc_out(M_pc),
         .ALU_out(M_ALUout),
-        .rt_out(M_rt)
+        .HILO_out(M_HILOout),
+        .rt_out(M_rt),
+        .EXT_out(M_EXTout)
     );
 
     wire [4:0] M_rt_addr;
@@ -230,7 +251,6 @@ module mips (
         .DMType(M_DMType),
         .DMWr(M_WE),
         .RFDst(M_RFDst),
-        .RFWr(M_RFWE),
         .RFWDSrc(M_RFWDSrc)
     );
 
@@ -238,7 +258,7 @@ module mips (
     wire [31:0] M_DMout;
 
     wire [31:0] FWD_M_RT =  (M_rt_addr == 0) ? 0 :
-                            (M_rt_addr == W_RFDst && forwardW && W_RFWE) ? W_RFWD :
+                            (M_rt_addr == W_RFDst) ? W_RFWD :
                             M_rt;
 
     M_DM M_dm (
@@ -253,19 +273,25 @@ module mips (
     );
 
     /// StageW
-    wire [31:0] W_ALUout, W_DMout;
+    wire [31:0] W_ALUout, W_DMout, W_HILOout, W_EXTout;
     W_REG W_reg(
         .clk(clk),
         .reset(reset || W_reg_reset),
         .WE(W_reg_en),
+
         .instr_in(M_instr),
         .pc_in(M_pc),
         .ALU_in(M_ALUout),
         .DM_in(M_DMout),
+        .HILO_in(M_HILOout),
+        .EXT_in(M_EXTout),
+
         .instr_out(W_instr),
         .pc_out(W_pc),
         .ALU_out(W_ALUout),
-        .DM_out(W_DMout)
+        .DM_out(W_DMout),
+        .HILO_out(W_HILOout),
+        .EXT_out(W_EXTout)
     );
 
     _CU W_cu(

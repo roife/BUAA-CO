@@ -1,5 +1,6 @@
 `timescale 1ns / 1ps
 `include "const.v"
+`define N 4096
 
 module F_IFU (
     input clk,
@@ -10,9 +11,9 @@ module F_IFU (
     output reg [31:0] pc
 );
 
-    reg [31:0] im [0:1023];
+    reg [31:0] im [0:`N-1];
 
-    assign instr = im[pc[11:2]];
+    assign instr = im[pc[15:2] - 13'HC00];
     
     initial begin
         pc <= 32'h0000_3000;

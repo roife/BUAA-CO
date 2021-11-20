@@ -22,7 +22,6 @@ module E_ALU (
                     (ALUControl == `ALU_sra )    ? res_sra :
                     (ALUControl == `ALU_slt )    ? res_slt :
                     (ALUControl == `ALU_sltu)    ? A < B :
-                    (ALUControl == `ALU_lui )    ? B << 16 :
                     0;
 
 endmodule
