@@ -32,7 +32,7 @@ module DM (
     function [31:0] sign_ext8;
         input [7:0] in;
         begin
-            sign_ext8 = {{24{in[15]}}, in};
+            sign_ext8 = {{24{in[7]}}, in};
         end
     endfunction
 
